@@ -6,4 +6,5 @@ weatherApp.get("/", (req: Request, res: Response) => {
   console.log("landing page");
   res.send("Bienvenido a Weather App - Ztm jea");
 });
+
 export { weatherApp };
