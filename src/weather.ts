@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { fetchLocationData, LocationDataType } from "./location";
+import { fetchWeatherData } from "./weatherapi";
 
 const GEOCODE_API_URL = process.env.GEOCODE_API_URL as string;
 const WEATHER_API_URL = process.env.WEATHER_API_URL as string;
@@ -20,7 +21,23 @@ const main = async (): Promise<number> => {
     return 1;
   }
 
-  console.log(locationInfo);
+  console.log(
+    `... fetching weather data for ${locationInfo.display_name}...\n`
+  );
+
+  // fetch weather data
+  try {
+    const weather = await fetchWeatherData(
+      WEATHER_API_URL,
+      locationInfo.lat,
+      locationInfo.lon
+    );
+    console.log(weather.format());
+  } catch (e) {
+    console.error(e);
+    return 1;
+  }
+  // display weather data
   return await Promise.resolve(0);
 };
 
