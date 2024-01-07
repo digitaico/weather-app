@@ -1,4 +1,5 @@
-import axios from "axios";
+import { z } from "zod";
+import type { AxiosStatic } from "axios";
 
 const weatherCodes: Record<number, string> = {
   0: "Clear sky",
@@ -31,22 +32,31 @@ const weatherCodes: Record<number, string> = {
   99: "Thunderstorm with heavy hail",
 };
 
-interface CurrentWeatherApiResponse {
-  temperature: string;
-  windspeed: number;
-  winddirection: number;
-  weathercode: number;
-  is_day: number;
-  time: string;
-}
+export const currentWeatherApiResponseSchema = z.object({
+  current_weather: z.object({
+    temperature: z.string(),
+    windspeed: z.number(),
+    winddirection: z.number(),
+    weathercode: z.number(),
+    is_day: z.number(),
+    time: z.string(),
+  }),
+  hourly_units: z.object({
+    temperature_2m: z.string(),
+  }),
+  hourly: z.object({
+    temperature_2m: z.array(z.number()),
+  }),
+});
+
+export type CurrentWeatherApiResponse = z.infer<
+  typeof currentWeatherApiResponseSchema
+>;
 
 export interface Temperature {
   value: number;
   unit: string;
 }
-
-const formatTemperature = (temp: Temperature): string =>
-  `${temp.value}${temp.unit}`;
 
 export interface Wind {
   speed: number;
@@ -54,28 +64,22 @@ export interface Wind {
   unit: string;
 }
 
-const formatWind = (wind: Wind): string => `${wind.speed}${wind.unit}`;
-
 export class CurrentWeather {
   temperature: Temperature;
-  wind: Wind;
   weathercode: number;
-  daytime: boolean;
+  is_day: boolean;
   time: string;
+  hourlyTemp: Array<number>;
 
   constructor(apiResponse: CurrentWeatherApiResponse) {
     this.temperature = {
-      value: parseInt(apiResponse.temperature),
-      unit: "C",
+      value: apiResponse.current_weather.temperature,
+      unit: apiResponse.hourly_units.temperature_2m,
     };
-    this.wind = {
-      speed: apiResponse.windspeed,
-      direction: apiResponse.winddirection,
-      unit: "kmh",
-    };
-    this.weathercode = apiResponse.weathercode;
-    this.daytime = apiResponse.is_day == 1 ? true : false;
-    this.time = apiResponse.time;
+    this.weathercode = apiResponse.current_weather.weathercode;
+    this.is_day = apiResponse.current_weather.is_day == 1 ? true : false;
+    this.time = apiResponse.current_weather.time;
+    this.hourlyTemp = apiResponse.current_weather.hourlyTemp;
   }
 
   condition(): string {
